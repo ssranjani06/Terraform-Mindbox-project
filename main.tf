@@ -1,0 +1,217 @@
+
+
+
+# resource "aws_instance" "web" {
+#   ami           = "ami-02eb7a4783e7e9317"
+#   instance_type = "t2.micro"
+#   key_name = "linux-os-key"
+
+#   tags = {
+#     Name = "Terraform-demo-instanc-1234"
+#     technical = "Amol"
+#     dept = ""
+#     Infra = "Terraform"
+#   }
+# }
+
+
+# Creating the VPC 
+
+resource "aws_vpc" "webapp-vpc" {
+  cidr_block       = "10.10.0.0/16"
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "Webapp-VPC"
+  }
+}
+
+
+#creating subnet
+
+resource "aws_subnet" "webapp-public-subnet-1a" {
+  vpc_id     = aws_vpc.webapp-vpc.id
+  cidr_block = "10.10.0.0/24"
+  availability_zone = "ap-south-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Webapp-public-subnet-1A"
+  }
+}
+resource "aws_subnet" "webapp-private-subnet-1a" {
+  vpc_id     = aws_vpc.webapp-vpc.id
+  cidr_block = "10.10.1.0/24"
+  availability_zone = "ap-south-1a"
+
+  tags = {
+    Name = "Webapp-private-subnet-1A"
+  }
+}
+
+
+
+resource "aws_subnet" "webapp-public-subnet-1b" {
+  vpc_id     = aws_vpc.webapp-vpc.id
+  cidr_block = "10.10.2.0/24"
+  availability_zone = "ap-south-1b"
+  map_public_ip_on_launch = true
+  
+  tags = {
+    Name = "Webapp-public-subnet-1B"
+  }
+}
+
+
+resource "aws_subnet" "webapp-private-subnet-1b" {
+  vpc_id     = aws_vpc.webapp-vpc.id
+  cidr_block = "10.10.3.0/24"
+  availability_zone = "ap-south-1b"
+  
+  tags = {
+    Name = "Webapp-subnet-1B"
+  }
+}
+
+
+resource "aws_key_pair" "ranjani-keypair" {
+  key_name   = "ranjani-keypair"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDM0Fqft1CpqlHV6z6rEqKDr0uIWDaBNu/ftS74G9kwnBKXieqOtlIUVtnrJlffze7gBfIT6QJHqfV8G2zGHXipTKTXX+M5FDWeA0IEWU/DE2LKNfZVdR2Y211BYAkxlB1P/zXy1Eo8oPc9cShUk2d/j2cehs7mGpSZQ8cQM5UIZM6Or+NdTIvv+yxUgOm/xDFd5sWMnW/8hjAeAGYh7ndejvujzq+bXg5I8cigpzYe/izmQMdMP3B3U5BDaO+1IABXeaSbzIw1P1ieURWOhOS3JIyA3rt/D/PNrfVHtq5xOmJIpNRg1qHDLp1Deh0LF5y+sFzOWAdHRE08QM/P7lSwBnswP+/Q5RI0k+ouYEcHjePxTdYCEv1AJ92xk11YrYBDOd0qt8HX7oHzpgfEZPYGQWiIVjuhxirPOa0MZrFY0tG4Kbwsw5zT8IqFKK6O4S5Eb8KH+HoB9JhTIuhg4IalKu8Oa71H98D6F21d03ole+C6tJCRPr18k8xT1qa3mI0= Amol@DESKTOP-2MVQBON"
+}
+
+# Internet GW
+
+resource "aws_internet_gateway" "webapp-IGW" {
+  vpc_id = aws_vpc.webapp-vpc.id
+
+  tags = {
+    Name = "Webapp-IGW"
+  }
+}
+
+# Route Table
+
+resource "aws_route_table" "webapp-RT" {
+  vpc_id = aws_vpc.webapp-vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.webapp-IGW.id
+  }
+
+  tags = {
+    Name = "Webapp-RT"
+  }
+}
+
+resource "aws_route_table_association" "webapp-RT-asso-01" {
+  subnet_id      = aws_subnet.webapp-public-subnet-1a.id
+  route_table_id = aws_route_table.webapp-RT.id
+}
+
+
+resource "aws_route_table_association" "webapp-RT-asso-02" {
+  subnet_id      = aws_subnet.webapp-public-subnet-1b.id
+  route_table_id = aws_route_table.webapp-RT.id
+}
+
+# Security Group
+
+resource "aws_security_group" "allow_ssh" {
+  name        = "allow_ssh"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.webapp-vpc.id
+
+  ingress {
+    description      = "ssh from anywhere"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  
+  ingress {
+    description      = "http from anywhere"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ALLOW_SSH"
+  }
+}
+#launch Template
+resource "aws_launch_template" "webapp-launch-template" {
+  name = "webapp-launch-template"
+  image_id = "ami-0f8ca728008ff5af4"
+  instance_type = "t2.micro"
+  key_name = aws_key_pair.ranjani-keypair.id
+  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "webapp"
+    }
+  }
+  user_data = filebase64("example.sh")
+}
+
+#ASG
+resource "aws_autoscaling_group" "webapp-ASG" {
+  #availability_zones = ["ap-south-1a","ap-south-1b"]
+  desired_capacity   = 2
+  max_size           = 5
+  min_size           = 2
+  vpc_zone_identifier = [aws_subnet.webapp-public-subnet-1a.id,aws_subnet.webapp-public-subnet-1b.id]
+  launch_template {
+    id      = aws_launch_template.webapp-launch-template.id
+    version = "$Latest"
+  }
+   target_group_arns = [aws_lb_target_group.webapp-TG-1.arn]
+}
+# ALB TG with ASG
+ resource "aws_lb_target_group" "webapp-TG-1" {
+   name     = "webapp-TG-1"
+   port     = 80
+   protocol = "HTTP"
+   vpc_id   = aws_vpc.webapp-vpc.id
+  }
+# LB Listener with ASG
+resource "aws_lb_listener" "webapp-listener-1" {
+  load_balancer_arn = aws_lb.webapp-LB-1.arn
+   port              = "80"
+   protocol          = "HTTP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.webapp-TG-1.arn
+  }
+ }
+#load balancer with ASG
+ resource "aws_lb" "webapp-LB-1" {
+  name               = "Webapp-LB-1"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.allow_ssh.id]
+  subnets            = [aws_subnet.webapp-public-subnet-1a.id,aws_subnet.webapp-public-subnet-1b.id]
+  tags = {
+    Environment = "production"
+   }
+ }
+
+
+
+
+
+
+
