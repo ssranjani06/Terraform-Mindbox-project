@@ -1,20 +1,5 @@
 
 
-
-# resource "aws_instance" "web" {
-#   ami           = "ami-02eb7a4783e7e9317"
-#   instance_type = "t2.micro"
-#   key_name = "linux-os-key"
-
-#   tags = {
-#     Name = "Terraform-demo-instanc-1234"
-#     technical = "Amol"
-#     dept = ""
-#     Infra = "Terraform"
-#   }
-# }
-
-
 # Creating the VPC 
 
 resource "aws_vpc" "webapp-vpc" {
@@ -74,10 +59,10 @@ resource "aws_subnet" "webapp-private-subnet-1b" {
 }
 
 
-resource "aws_key_pair" "ranjani-keypair" {
+ resource "aws_key_pair" "ranjani-keypair" {
   key_name   = "ranjani-keypair"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDM0Fqft1CpqlHV6z6rEqKDr0uIWDaBNu/ftS74G9kwnBKXieqOtlIUVtnrJlffze7gBfIT6QJHqfV8G2zGHXipTKTXX+M5FDWeA0IEWU/DE2LKNfZVdR2Y211BYAkxlB1P/zXy1Eo8oPc9cShUk2d/j2cehs7mGpSZQ8cQM5UIZM6Or+NdTIvv+yxUgOm/xDFd5sWMnW/8hjAeAGYh7ndejvujzq+bXg5I8cigpzYe/izmQMdMP3B3U5BDaO+1IABXeaSbzIw1P1ieURWOhOS3JIyA3rt/D/PNrfVHtq5xOmJIpNRg1qHDLp1Deh0LF5y+sFzOWAdHRE08QM/P7lSwBnswP+/Q5RI0k+ouYEcHjePxTdYCEv1AJ92xk11YrYBDOd0qt8HX7oHzpgfEZPYGQWiIVjuhxirPOa0MZrFY0tG4Kbwsw5zT8IqFKK6O4S5Eb8KH+HoB9JhTIuhg4IalKu8Oa71H98D6F21d03ole+C6tJCRPr18k8xT1qa3mI0= Amol@DESKTOP-2MVQBON"
-}
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDPHGkph/EjgARLn+dhMxJDNBgTHln/You8hC7IKcx7sITKnNagiElwUOcdVOg0nWsvzj4Yl2n8JQrQczYKcCHZace/8QmHlc/WmHwCJfNCPi7T2QPJKaLYh71qfyKAGSgTjka0OhtNMVqTZwKPzW76CA/zjXwyU5G5Q3hPgLzjKwf7VWaBFWGcW3E/5yn8AFMmApXE3JiCKUw1raJxiVP1tL4BgCVjRbV3XiVsD4zHReOCy/sEV9kTCyMj6m/QuLxbAI4BN+FqoYYuM+wLMAHwYYt6b/hQpRFEfnspTz/v26iISlJtvBdwzhjvlm9jSmOG2fRLKP61S4/qOyKPQakMgwXXExqNo/fV+U+HYnYT1xfUNmKXzw0I9Y7U1wMT8jJRpPQwIvO+CuIYBGHf86bLaEpgb08VGPPgvGj7qeySOO5nWdeqh/fzZvqm5TTZRLrDAjbziIo24mBduAE9Nm6v9Nm2RG2X+W2H6AIMH3OmGOjYxfxJtPcEso6ERNGiFGs= ssarav252@INSML-0Y3XQ4Y"
+ }
 
 # Internet GW
 
@@ -154,7 +139,7 @@ resource "aws_security_group" "allow_ssh" {
 #launch Template
 resource "aws_launch_template" "webapp-launch-template" {
   name = "webapp-launch-template"
-  image_id = "ami-0f8ca728008ff5af4"
+  image_id = "ami-02eb7a4783e7e9317"
   instance_type = "t2.micro"
   key_name = aws_key_pair.ranjani-keypair.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
